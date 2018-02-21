@@ -1,5 +1,0 @@
-Manifest-Version: 1.0
-Implementation-Title: gradle.version.change.plugin
-Implementation-Version: 0.9.0
-Description: gradle.version.change.plugin
-

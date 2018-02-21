@@ -6,6 +6,7 @@ buildscript {
     dependencies {
         classpath 'org.junit.platform:junit-platform-gradle-plugin:1.0.0'
         classpath 'com.steammachine.org:gradle.plugins:0.9.3'
+        classpath 'com.steammachine.org:gradle.copy.plugin:0.9.1'
     }
 }
 
@@ -15,6 +16,8 @@ apply plugin: 'java'
 apply plugin: 'maven-publish'
 apply plugin: "maven"
 apply plugin: 'com.steammachine.org.gradle.properties.plugins'
+apply plugin: 'org.junit.platform.gradle.plugin'
+apply plugin: 'com.steammachine.org.gradle.copyresources.plugin'
 
 repositories {
     mavenCentral()
@@ -81,6 +84,20 @@ idea {
         testOutputDir = file('build/classes/test')
     }
 }
+
+
+junitPlatform {
+    details = 'tree'
+    filters {
+        engines {
+            include 'junit-jupiter'
+            include 'junit-vintage'
+        }
+        tags { exclude 'DebugRun' }
+        includeClassNamePattern '.*Check'
+    }
+}
+
 
 def artefacts_publications_user = hasProperty('repo_user') ? repo_user : 'repo_user'
 def artefacts_publications_password = hasProperty('repo_password') ? repo_password : 'repo_password'

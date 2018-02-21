@@ -1,7 +1,5 @@
 package com.steammachine.org.gralde.plugins
 
-import com.steammachine.common.lazyeval.LazyEval
-import com.steammachine.common.utils.commonutils.CommonUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
@@ -10,7 +8,6 @@ import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.TaskAction
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.security.MessageDigest
@@ -34,23 +31,27 @@ class ChangeNotifier extends DefaultTask {
         return files
     }
 
-    private FileCollection ensureFiles() {
+    FileCollection ensureFiles() {
         files = files ? files : new UnionFileCollection()
     }
 
-    void setFiles(String searchclasspath) {
-        getLogger().log(LogLevel.DEBUG, "void setFiles(String searchclasspath) ")
-        ensureFiles().add(project.files(searchclasspath))
+    void setFiles(String ... filenames) {
+        getLogger().log(LogLevel.DEBUG, "void setFiles(String ... filenames) ")
+        filenames.each {
+            fn -> ensureFiles().add(project.files(fn))
+        }
     }
 
-    void setFiles(FileCollection searchclasspath) {
+    void setFiles(FileCollection collection) {
         getLogger().log(LogLevel.DEBUG, "void setFiles(FileCollection searchclasspath) ")
-        ensureFiles().add(searchclasspath)
+        ensureFiles().add(collection)
     }
 
-    void setFiles(File searchclasspath) {
+    void setFiles(File ... files) {
         getLogger().log(LogLevel.DEBUG, "void setFiles(File searchclasspath) ")
-        ensureFiles().add(project.files(searchclasspath))
+        files.each {
+            file -> ensureFiles().add(project.files(file))
+        }
     }
 
     void setFiles(FileTree searchclasspath) {
@@ -60,13 +61,18 @@ class ChangeNotifier extends DefaultTask {
 
     void setRootDirectory(File rootDirectory) {
         Objects.requireNonNull(rootDirectory)
-        this.rootDirectory = rootDirectory;
+        this.rootDirectory = rootDirectory
+    }
+
+    void setRootDirectory(String rootDirectory) {
+        Objects.requireNonNull(rootDirectory)
+        this.rootDirectory = project.file(rootDirectory)
     }
 
     @TaskAction
     protected void watch() {
         if (!rootDirectory) {
-            throw new IllegalStateException()
+            throw new IllegalStateException("root directory is not set")
         }
         ensureFiles().files.forEach { f ->
             if (!belongsToRoot(f, rootDirectory)) {
@@ -79,11 +85,11 @@ class ChangeNotifier extends DefaultTask {
         println calcCommonHash(ensureFiles().getFiles())
     }
 
-    static boolean belongsToRoot(File container, File f) {
-        pathBelongsToRoot(container.toPath(), f.toPath())
+    static boolean belongsToRoot(File f, File container) {
+        pathBelongsToRoot(f.toPath(), container.toPath())
     }
 
-    static boolean pathBelongsToRoot(Path containerPath, Path filePath) {
+    static boolean pathBelongsToRoot(Path filePath, Path containerPath) {
         if (containerPath.nameCount > filePath.nameCount) {
             false
         } else if (containerPath.root != filePath.root) {
@@ -93,65 +99,46 @@ class ChangeNotifier extends DefaultTask {
         }
     }
 
-    static Path subtract(Path base, Path subtractor) {
-        if (!pathBelongsToRoot(base, subtractor)) {
-            throw new IllegalStateException("file $subtractor is not within root directory $base")
+    static Path difference(Path subtrahend, Path reduced) {
+        if (!pathBelongsToRoot(subtrahend, reduced)) {
+            throw new IllegalStateException("file $reduced is not within root directory $subtrahend")
         }
-        subtractor.nameCount == base.nameCount ? ZERO_PATH : subtractor.subpath(base.nameCount, subtractor.nameCount)
+        reduced.nameCount == subtrahend.nameCount ? ZERO_PATH : subtrahend.subpath(reduced.nameCount, subtrahend.nameCount)
     }
 
+    String calculateHash() {
+        calcCommonHash(ensureFiles().files)
+    }
 
-    String calcCommonHash(Set<File> files) {
+    private String calcCommonHash(Set<File> files) {
         List<File> list = new ArrayList(files)
         Collections.sort(list, COMPARATOR)
 
         def digest = MessageDigest.getInstance("MD5")
         list.stream().forEachOrdered {
-
-
+            f -> calcFileHash(f, digest)
         }
 
-        "dd "
+        Base64.encoder.encodeToString(digest.digest())
     }
 
 
-    byte[] calcFileHash(File file) throws IOException {
+    void calcFileHash(File file, MessageDigest digest) throws IOException {
         Objects.requireNonNull(file)
-        /// BufferedReader reader =
+        def buffer = new byte[1024]
+        def difference = difference(file.toPath(), rootDirectory.toPath())
 
 
-        new BufferedReader(Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)).withCloseable {
-            LazyEval<MessageDigest> digest = LazyEval.eval {
-                CommonUtils.suppress(new CommonUtils.SupressedExceptionSupplier<MessageDigest>() {
-                    @Override
-                    MessageDigest execute() throws Exception {
-                        return MessageDigest.getInstance("MD5")
-                    }
-                })
-            }
-
-
-            file.absolutePath.getBytes(StandardCharsets.UTF_8)
-
-            digest.value().digest()
-
-
+        for (int i = 0; i < difference.nameCount; i++) {
+            digest.update(difference[i].toString().getBytes(StandardCharsets.UTF_8))
         }
 
-
-        String line;
-        while ((line = reader.readLine()) != null) {
-//                if (containsTag(line)) {
-//                    continue;
-//                }
-//                if (isLFE(line)) {
-//                    continue;
-//                }
-//                byte[] chunk = line.getBytes(dataCharset());
-//                digest.value().update(chunk);
-//            }
-//            return digest.value().digest();
-//        }
+        new BufferedInputStream(new FileInputStream(file)).withCloseable {
+            it ->
+                def read
+                while ((read = it.read(buffer)) >= 0) {
+                    digest.update(buffer, 0, read)
+                }
         }
     }
 
