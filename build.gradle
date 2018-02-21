@@ -1,0 +1,116 @@
+buildscript {
+    repositories {
+        maven { url 'https://clojars.org/repo' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.junit.platform:junit-platform-gradle-plugin:1.0.0'
+        classpath 'com.steammachine.org:gradle.plugins:0.9.3'
+    }
+}
+
+apply plugin: 'idea'
+apply plugin: 'groovy'
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: "maven"
+apply plugin: 'com.steammachine.org.gradle.properties.plugins'
+
+repositories {
+    mavenCentral()
+    maven { url 'https://clojars.org/repo' }
+}
+
+dependencies {
+    implementation localGroovy()
+    implementation gradleApi()
+
+    compile 'org.slf4j:slf4j-api:1.7.25'
+    compile 'com.steammachine.org:common.utils:1.0.5'
+    compile 'com.googlecode.json-simple:json-simple:1.1'
+    compile 'com.steammachine.org:common.utils:1.0.5'
+
+    testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.0.0'
+    testRuntime 'org.junit.jupiter:junit-jupiter-api:5.0.0'
+    testCompile 'junit:junit:4.12'
+    testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.0.0'
+    testRuntime 'org.junit.vintage:junit-vintage-engine:4.12.0'
+    testCompile 'org.junit.platform:junit-platform-launcher:1.0.0'
+    testCompile 'com.steammachine.org:junit5.extensions:0.9.1'
+}
+
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+
+auxprops.set('deploy') {
+    propertyFile file('publish.properties')
+}
+
+group = deploy.group
+version = deploy.version
+
+jar {
+    manifest {
+        attributes(
+                "Implementation-Title": deploy.title,
+                "Implementation-Version": deploy.version,
+                "Description": deploy.description
+        )
+    }
+}
+
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+    classifier "sources"
+    manifest {
+        attributes(
+                "Implementation-Title": deploy.sourcecode_description,
+                "Implementation-Version": deploy.version,
+                "Description": deploy.sourcecode_description
+        )
+    }
+}
+
+idea {
+    module {
+        inheritOutputDirs = false
+        outputDir = file('build/classes/main')
+        testOutputDir = file('build/classes/test')
+    }
+}
+
+def artefacts_publications_user = hasProperty('repo_user') ? repo_user : 'repo_user'
+def artefacts_publications_password = hasProperty('repo_password') ? repo_password : 'repo_password'
+
+publishing {
+    repositories {
+        maven {
+            credentials {
+                username = artefacts_publications_user
+                password = artefacts_publications_password
+            }
+            url 'https://clojars.org/repo'
+        }
+    }
+
+    publications {
+        mavenJava(MavenPublication) {
+            groupId deploy.group
+            artifactId deploy.artifact
+            version deploy.version
+            from components.java
+
+            artifact sourceJar
+        }
+    }
+
+}
+
+task tagCommandLine {
+    doLast {
+        println "git tag -a v$deploy.version " + " -m \"version $deploy.version\""
+    }
+}

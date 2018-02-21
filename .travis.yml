@@ -1,0 +1,19 @@
+language: java
+before_install:
+ - chmod +x gradlew
+
+install: gradle assemble
+
+build: gradle build
+
+deploy:
+  - provider: script
+    script: sh deploy.sh $repo_user $repo_password
+    on:
+       branch: release
+
+branches:
+  only:
+  - development
+  - release
+  - /^feature.*$/
