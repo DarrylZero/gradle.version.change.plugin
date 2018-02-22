@@ -98,6 +98,12 @@ junitPlatform {
     }
 }
 
+copyresources.copy("groovyresources") {
+    it.from 'src/test/groovy'
+    it.into 'build/classes/test'
+    it.include '**/**resource*'
+}
+
 
 def artefacts_publications_user = hasProperty('repo_user') ? repo_user : 'repo_user'
 def artefacts_publications_password = hasProperty('repo_password') ? repo_password : 'repo_password'

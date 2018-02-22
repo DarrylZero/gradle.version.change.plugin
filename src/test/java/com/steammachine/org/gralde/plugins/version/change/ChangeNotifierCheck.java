@@ -1,9 +1,9 @@
 package com.steammachine.org.gralde.plugins.version.change;
 
-import com.steammachine.org.gralde.plugins.ChangeNotifier;
 import com.steammachine.org.junit5.extensions.expectedexceptions.Expected;
 import org.gradle.api.Project;
 import org.gradle.testfixtures.ProjectBuilder;
+import org.gradle.util.ConfigureUtil;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static com.steammachine.common.utils.commonutils.CommonUtils.getAbsoluteResourcePath;
-import static com.steammachine.org.gralde.plugins.ChangeNotifier.*;
+import static com.steammachine.org.gralde.plugins.version.change.ChangeNotifier.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ChangeNotifierCheck {
@@ -78,7 +78,7 @@ class ChangeNotifierCheck {
     }
 
     @Test
-    void fullCycle10() {
+    void checkHash10() {
         Project project = ProjectBuilder.builder().build();
         ChangeNotifier notifier = project.getTasks().create("changenotifier", ChangeNotifier.class);
         notifier.setRootDirectory(getAbsoluteResourcePath(getClass(), "res"));
@@ -86,6 +86,7 @@ class ChangeNotifierCheck {
                 getAbsoluteResourcePath(getClass(), "res/subpath/resource_file2.txt"));
         assertEquals("IDqhT8cn8donae361rcB8A==", notifier.calculateHash());
     }
+
 
 
 }
