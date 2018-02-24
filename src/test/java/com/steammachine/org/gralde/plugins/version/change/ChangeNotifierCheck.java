@@ -4,6 +4,7 @@ import com.steammachine.org.junit5.extensions.expectedexceptions.Expected;
 import org.gradle.api.Project;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.gradle.util.ConfigureUtil;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -15,6 +16,11 @@ import static com.steammachine.org.gralde.plugins.version.change.ChangeNotifier.
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ChangeNotifierCheck {
+
+    @Test
+    void constantsCheck() {
+        assertEquals("action", ChangeNotifier.ACTION);
+    }
 
     @Test
     void belongsToRoot10() {

@@ -12,9 +12,40 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.security.MessageDigest
+import java.util.function.Consumer
 import java.util.regex.Pattern
 
+import static com.steammachine.org.gralde.plugins.version.change.ChangeNotifier.Action.*
+
 class ChangeNotifier extends DefaultTask {
+
+    enum Action {
+        CHECK('check'),
+        INC('inc'),
+        FORCENEXT('forcenext'),
+        TAKE('take'),
+        HASH('hash')
+
+        static final Map<String, Action> NAMES = names()
+
+        static Map<String, Action> names() {
+            def value = [:]
+            for (Action a : Action.enumConstants) {
+                value.put(a.ident, a)
+            }
+            Collections.unmodifiableMap(value)
+        }
+
+        final String ident;
+
+        Action(String ident) {
+            this.ident = Objects.requireNonNull(ident)
+        }
+
+        static Action byName(String name) {
+            NAMES[name]
+        }
+    }
 
     private static final Comparator<File> COMPARATOR = new Comparator<File>() {
         @Override
@@ -23,12 +54,24 @@ class ChangeNotifier extends DefaultTask {
         }
     }
     private static final Path ZERO_PATH = Paths.get("")
-    public static final Pattern VERSION_PATTERN = Pattern.compile('^(\\d+)\\.(\\d+)\\.(\\d+)$')
+    private static final Pattern VERSION_PATTERN = Pattern.compile('^(\\d+)\\.(\\d+)\\.(\\d+)$')
+    public static final String ACTION = 'action'
+
+    private final List<Consumer<String>> loggers = []
 
     UnionFileCollection files
     File rootDirectory
     ValueStorage hashStorage
     ValueStorage versionStorage
+
+    ChangeNotifier() {
+        addLogger(new Consumer<String>() {
+            @Override
+            void accept(String data) {
+                logger.log(LogLevel.INFO, data)
+            }
+        })
+    }
 
     FileCollection getFiles() {
         return files
@@ -46,19 +89,19 @@ class ChangeNotifier extends DefaultTask {
     }
 
     void setFiles(FileCollection collection) {
-        getLogger().log(LogLevel.DEBUG, "void setFiles(FileCollection searchclasspath) ")
+        log("void setFiles(FileCollection searchclasspath) ")
         ensureFiles().add(collection)
     }
 
     void setFiles(File... files) {
-        getLogger().log(LogLevel.DEBUG, "void setFiles(File searchclasspath) ")
+        log("void setFiles(File searchclasspath) ")
         files.each {
             file -> ensureFiles().add(project.files(file))
         }
     }
 
     void setFiles(FileTree searchclasspath) {
-        getLogger().log(LogLevel.DEBUG, "void setFiles(FileTree searchclasspath) ")
+        log("void setFiles(FileTree searchclasspath) ")
         ensureFiles().add(searchclasspath)
     }
 
@@ -84,70 +127,93 @@ class ChangeNotifier extends DefaultTask {
         ConfigureUtil.configure(config, versionStorage)
     }
 
+    void addLogger(Consumer<String> logConsumer) {
+        loggers.add logConsumer
+    }
+
+    void removeLogger(Consumer<String> logConsumer) {
+        loggers.remove logConsumer
+    }
+
+
+    private log(String data) {
+        loggers.each { it.accept(data) }
+    }
 
     @TaskAction
-    protected void process() {
+    protected process() {
         checkStart()
-        def versionCommand = System.getProperty('VER')
-        if (versionCommand == null) {
-            checkChanges()
+
+        def versionCommand = ChangeNotifier.Action.byName(System.getProperty('action'))
+        switch (versionCommand) {
+            case null:
+                checkChanges()
+                break
+
+            case CHECK:
+                checkChanges()
+                break
+
+            case INC:
+                incrementVersion()
+                break
+
+            case FORCENEXT:
+                forceNext()
+                break
+
+            case TAKE:
+                take()
+                break
+
+            case HASH:
+                hash()
+                break
+
+            default:
+                def action = System.getProperty(ACTION)
+                logger.log(LogLevel.INFO, "unknown option $action")
+                break
+        }
+    }
+
+    private hash() {
+        String hash = calculateHash()
+        log("module $project.name hash is $hash")
+    }
+
+    private take() {
+        versionStorage.read()
+        log("version value is $versionStorage.value")
+    }
+
+    private forceNext() {
+        versionStorage.read()
+        if (versionStorage.value == null) {
+            logger.log(LogLevel.INFO, "cannot increment  null version value")
+        } else if (!VERSION_PATTERN.matcher(versionStorage.value).matches()) {
+            logger.log(LogLevel.INFO, "cannot increment value $versionStorage.value")
         } else {
-            switch (versionCommand) {
-                case "check" :
-                    checkChanges()
-                    break
-
-                case "inc" :
-                    versionStorage.read()
-                    hashStorage.read()
-                    if (hashStorage.value != calculateHash()) {
-                        if (versionStorage.value == null) {
-                            logger.log(LogLevel.INFO, "cannot increment null value")
-                        } else if (!VERSION_PATTERN.matcher(versionStorage.value).matches()) {
-                            logger.log(LogLevel.INFO, "cannot increment value $versionStorage.value")
-                        } else {
-                            def ver = Integer.parseInt(versionStorage.value.split("\\.")[2])
-                            ver++
-                            versionStorage.value = versionStorage.value.substring(0, versionStorage.value.lastIndexOf(".")) +
-                                    ".$ver";
-                            hashStorage.value = calculateHash()
-                            versionStorage.write()
-                            hashStorage.write()
-                        }
-                    }
-                    break
-
-                case "get" :
-                    versionStorage.read()
-                    logger.log(LogLevel.INFO, "version value is $versionStorage.value")
-                    break
-
-                default:
-                    checkChanges()
-                    break
-            }
+            def ver = Integer.parseInt(versionStorage.value.split("\\.")[2]) + 1
+            versionStorage.value = versionStorage.value.substring(0, versionStorage.value.lastIndexOf(".")) + ".$ver"
+            versionStorage.write()
         }
     }
 
-    private void checkChanges() {
+    private incrementVersion() {
+        versionStorage.read()
         hashStorage.read()
-        boolean changed = hashStorage.value != calculateHash()
-        logger.log(LogLevel.INFO, "sourcecode for project $project.name is " + (changed ? "changed" : "not changed"))
-    }
-
-    private void checkStart() {
-        if (!hashStorage) {
-            throw new IllegalStateException("hashStorage is not set")
-        }
-        if (!versionStorage) {
-            throw new IllegalStateException("versionStorage is not set")
-        }
-        if (!rootDirectory) {
-            throw new IllegalStateException("root directory is not set")
-        }
-        ensureFiles().files.forEach { f ->
-            if (!belongsToRoot(f, rootDirectory)) {
-                throw new IllegalStateException("file $f.absolutePath is not within root directory $rootDirectory.absolutePath")
+        if (hashStorage.value != calculateHash()) {
+            if (versionStorage.value == null) {
+                log("cannot increment  null version value")
+            } else if (!VERSION_PATTERN.matcher(versionStorage.value).matches()) {
+                log("cannot increment value $versionStorage.value")
+            } else {
+                def ver = Integer.parseInt(versionStorage.value.split("\\.")[2]) + 1
+                versionStorage.value = versionStorage.value.substring(0, versionStorage.value.lastIndexOf(".")) + ".$ver"
+                hashStorage.value = calculateHash()
+                versionStorage.write()
+                hashStorage.write()
             }
         }
     }
@@ -203,6 +269,30 @@ class ChangeNotifier extends DefaultTask {
             def read
             while ((read = it.read(buffer)) >= 0) {
                 digest.update(buffer, 0, read)
+            }
+        }
+    }
+
+
+    private checkChanges() {
+        hashStorage.read()
+        boolean changed = hashStorage.value != calculateHash()
+        log("sourcecode for project $project.name is " + (changed ? "changed" : "not changed"))
+    }
+
+    private checkStart() {
+        if (!hashStorage) {
+            throw new IllegalStateException("hashStorage is not set")
+        }
+        if (!versionStorage) {
+            throw new IllegalStateException("versionStorage is not set")
+        }
+        if (!rootDirectory) {
+            throw new IllegalStateException("root directory is not set")
+        }
+        ensureFiles().files.forEach { f ->
+            if (!belongsToRoot(f, rootDirectory)) {
+                throw new IllegalStateException("file $f.absolutePath is not within root directory $rootDirectory.absolutePath")
             }
         }
     }
