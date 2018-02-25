@@ -141,7 +141,7 @@ class ValueCheck {
             propertyName = "version"
         }
 
-        System.setProperty("action", "inc")
+        System.setProperty("action", "nextversion")
         project.evaluate()
 
         new FileOutputStream(path).withCloseable {
@@ -186,7 +186,7 @@ class ValueCheck {
             propertyName = "version"
         }
 
-        System.setProperty("action", "inc")
+        System.setProperty("action", "nextversion")
         project.evaluate()
 
         new FileOutputStream(path).withCloseable {

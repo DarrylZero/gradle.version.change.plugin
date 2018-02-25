@@ -19,10 +19,13 @@ import static com.steammachine.org.gralde.plugins.version.change.ChangeNotifier.
 
 class ChangeNotifier extends DefaultTask {
 
+    /**
+     * possible actions
+     */
     enum Action {
         CHECK('check'),
-        INC('inc'),
-        FORCENEXT('forcenext'),
+        NEXTVERISON('nextversion'),
+        FORCENEXTVERSION('forcenextverison'),
         TAKE('take'),
         HASH('hash')
 
@@ -36,7 +39,7 @@ class ChangeNotifier extends DefaultTask {
             Collections.unmodifiableMap(value)
         }
 
-        final String ident;
+        final String ident
 
         Action(String ident) {
             this.ident = Objects.requireNonNull(ident)
@@ -68,7 +71,7 @@ class ChangeNotifier extends DefaultTask {
         addLogger(new Consumer<String>() {
             @Override
             void accept(String data) {
-                logger.log(LogLevel.INFO, data)
+                println data
             }
         })
     }
@@ -144,7 +147,10 @@ class ChangeNotifier extends DefaultTask {
     protected process() {
         checkStart()
 
-        def versionCommand = ChangeNotifier.Action.byName(System.getProperty('action'))
+        def command = System.getProperty('action')
+        log "command is $command"
+        def versionCommand = ChangeNotifier.Action.byName command
+
         switch (versionCommand) {
             case null:
                 checkChanges()
@@ -154,11 +160,11 @@ class ChangeNotifier extends DefaultTask {
                 checkChanges()
                 break
 
-            case INC:
+            case NEXTVERISON:
                 incrementVersion()
                 break
 
-            case FORCENEXT:
+            case FORCENEXTVERSION:
                 forceNext()
                 break
 
@@ -172,28 +178,29 @@ class ChangeNotifier extends DefaultTask {
 
             default:
                 def action = System.getProperty(ACTION)
-                logger.log(LogLevel.INFO, "unknown option $action")
+                log("unknown option $action")
                 break
         }
     }
 
     private hash() {
         String hash = calculateHash()
-        log("module $project.name hash is $hash")
+        log("hash is $hash for project $project.name ")
     }
 
     private take() {
         versionStorage.read()
-        log("version value is $versionStorage.value")
+        log("version value is $versionStorage.value for project $project.name")
     }
 
     private forceNext() {
         versionStorage.read()
         if (versionStorage.value == null) {
-            logger.log(LogLevel.INFO, "cannot increment  null version value")
+            log("cannot increment null version value for project $project.name")
         } else if (!VERSION_PATTERN.matcher(versionStorage.value).matches()) {
-            logger.log(LogLevel.INFO, "cannot increment value $versionStorage.value")
+            log("cannot increment value $versionStorage.value for project $project.name")
         } else {
+            log("incrementing value $versionStorage.value for project $project.name")
             def ver = Integer.parseInt(versionStorage.value.split("\\.")[2]) + 1
             versionStorage.value = versionStorage.value.substring(0, versionStorage.value.lastIndexOf(".")) + ".$ver"
             versionStorage.write()
@@ -205,10 +212,11 @@ class ChangeNotifier extends DefaultTask {
         hashStorage.read()
         if (hashStorage.value != calculateHash()) {
             if (versionStorage.value == null) {
-                log("cannot increment  null version value")
+                log("cannot increment null version value for project $project.name")
             } else if (!VERSION_PATTERN.matcher(versionStorage.value).matches()) {
-                log("cannot increment value $versionStorage.value")
+                log("cannot increment value $versionStorage.value for project $project.name")
             } else {
+                log("incrementing the version $versionStorage.value for project $project.name")
                 def ver = Integer.parseInt(versionStorage.value.split("\\.")[2]) + 1
                 versionStorage.value = versionStorage.value.substring(0, versionStorage.value.lastIndexOf(".")) + ".$ver"
                 hashStorage.value = calculateHash()

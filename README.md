@@ -1,3 +1,6 @@
+This readme file is a draft.
+
+
 # gradle.resource.copy.plugin
 gradle copy resources plugin   ![Build Status](https://travis-ci.org/DarrylZero/gradle.resource.copy.plugin.svg?branch=development)
 

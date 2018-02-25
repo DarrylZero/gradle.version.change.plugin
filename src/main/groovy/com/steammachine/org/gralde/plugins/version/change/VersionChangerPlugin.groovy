@@ -13,7 +13,8 @@ import static com.steammachine.common.utils.commonutils.CommonUtils.getAbsoluteR
  */
 class VersionChangerPlugin implements Plugin<Project> {
 
-    public static final String TASK_NAME = "version_manager"
+    public static final String TASK_NAME = 'version_manager'
+    public static final String DAFAULT_PROPERTY_FILE_NAME = 'publish.properties'
 
     void apply(Project project) {
 
@@ -22,12 +23,12 @@ class VersionChangerPlugin implements Plugin<Project> {
             files = project.fileTree('src')
 
             hashStorage(PropertyStorage.class) {
-                file = project.file('publish.properties')
+                file = project.file(DAFAULT_PROPERTY_FILE_NAME)
                 propertyName = 'hash'
             }
 
             versionStorage(PropertyStorage.class) {
-                file = project.file('publish.properties')
+                file = project.file(DAFAULT_PROPERTY_FILE_NAME)
                 propertyName = 'version'
             }
         }

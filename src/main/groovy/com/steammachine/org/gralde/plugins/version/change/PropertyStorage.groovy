@@ -1,5 +1,8 @@
 package com.steammachine.org.gralde.plugins.version.change
 
+/**
+ * implemantation of ValueStorage for property storage
+ */
 class PropertyStorage implements ValueStorage {
 
     private File file
@@ -25,10 +28,10 @@ class PropertyStorage implements ValueStorage {
     @Override
     void read() {
         if (!file) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("file is not defined")
         }
         if (!propertyName) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("propertyName is not defined")
         }
 
         new FileInputStream(file).withCloseable {
@@ -36,17 +39,15 @@ class PropertyStorage implements ValueStorage {
             properties.load(it)
             value = properties.getProperty(propertyName)
         }
-
-
     }
 
     @Override
     void write() {
         if (!file) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("file is not defined")
         }
         if (!propertyName) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("propertyName is not defined")
         }
 
         def properties = new Properties()
@@ -59,8 +60,6 @@ class PropertyStorage implements ValueStorage {
         new FileOutputStream(file).withCloseable {
             properties.store(it, "")
         }
-
-
     }
 
     @Override
