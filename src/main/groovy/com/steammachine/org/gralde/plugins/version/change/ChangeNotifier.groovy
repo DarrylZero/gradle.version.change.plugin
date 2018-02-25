@@ -17,10 +17,13 @@ import java.util.regex.Pattern
 
 import static com.steammachine.org.gralde.plugins.version.change.ChangeNotifier.Action.*
 
+/**
+ * Task for data
+ */
 class ChangeNotifier extends DefaultTask {
 
     /**
-     * possible actions
+     * possible task actions
      */
     enum Action {
         CHECK('check'),

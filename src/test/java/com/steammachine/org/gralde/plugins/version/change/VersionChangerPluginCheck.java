@@ -11,8 +11,16 @@ public class VersionChangerPluginCheck {
 
 
     @Test
+    void nameIntegrityChacks() {
+        assertEquals("com.steammachine.org.gralde.plugins.version.change.VersionChangerPlugin",
+                VersionChangerPlugin.class.getName());
+    }
+
+    @Test
     void constantChacks() {
         assertEquals("version_manager", VersionChangerPlugin.TASK_NAME);
+        assertEquals("publish.properties", VersionChangerPlugin.DAFAULT_PROPERTY_FILE_NAME);
+        assertEquals("src", VersionChangerPlugin.DEFAULT_SOURCE_DIRECTORY);
     }
 
 

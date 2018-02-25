@@ -2,6 +2,9 @@ package com.steammachine.org.gralde.plugins.version.change
 
 /**
  * interface for value storage
+ *
+ * {@link com.steammachine.org.gralde.plugins.version.change.ValueStorage}
+ * com.steammachine.org.gralde.plugins.version.change.ValueStorage
  */
 interface ValueStorage {
 

@@ -2,6 +2,9 @@ package com.steammachine.org.gralde.plugins.version.change
 
 /**
  * implemantation of ValueStorage for property storage
+ *
+ * {@link com.steammachine.org.gralde.plugins.version.change.PropertyStorage}
+ * com.steammachine.org.gralde.plugins.version.change.PropertyStorage
  */
 class PropertyStorage implements ValueStorage {
 

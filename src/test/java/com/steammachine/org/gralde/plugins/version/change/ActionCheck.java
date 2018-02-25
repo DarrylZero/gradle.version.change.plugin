@@ -10,8 +10,8 @@ class ActionCheck {
 
     enum ActionTemplate {
         CHECK("check"),
-        NEXTVERSION("nextversion"),
-        FORCENEXTVERSION("forcenextversion"),
+        NEXTVERISON("nextversion"),
+        FORCENEXTVERSION("forcenextverison"),
         TAKE("take"),
         HASH("hash");
 

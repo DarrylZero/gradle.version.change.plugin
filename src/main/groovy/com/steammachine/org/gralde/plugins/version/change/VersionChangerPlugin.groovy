@@ -15,12 +15,13 @@ class VersionChangerPlugin implements Plugin<Project> {
 
     public static final String TASK_NAME = 'version_manager'
     public static final String DAFAULT_PROPERTY_FILE_NAME = 'publish.properties'
+    public static final String DEFAULT_SOURCE_DIRECTORY = 'src'
 
     void apply(Project project) {
 
         project.tasks.create(TASK_NAME, ChangeNotifier) {
-            rootDirectory = project.file('src')
-            files = project.fileTree('src')
+            rootDirectory = project.file(DEFAULT_SOURCE_DIRECTORY)
+            files = project.fileTree(DEFAULT_SOURCE_DIRECTORY)
 
             hashStorage(PropertyStorage.class) {
                 file = project.file(DAFAULT_PROPERTY_FILE_NAME)
