@@ -25,8 +25,8 @@ class ActionCheck {
 
     @Test
     void testNameIntegrity() {
-        EnumComparisonUtils.checkIfEnumsEqual(ChangeNotifier.Action.class, ActionTemplate.class);
-        EnumComparisonUtils.deepCheckIfEnumsAreEqual(ChangeNotifier.Action.class, ActionTemplate.class,
+        EnumComparisonUtils.checkIfEnumsEqual(Action.class, ActionTemplate.class);
+        EnumComparisonUtils.deepCheckIfEnumsAreEqual(Action.class, ActionTemplate.class,
                 (action, actionTemplate) -> Objects.equals(action.getIdent(), actionTemplate.ident));
     }
 

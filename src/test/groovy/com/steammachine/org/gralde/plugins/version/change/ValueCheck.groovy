@@ -101,7 +101,7 @@ class ValueCheck {
             propertyName = "version"
         }
 
-        System.setProperty("action", "inc")
+        System.setProperty("action", "nextversion")
         project.evaluate()
 
         def properties = new Properties()

@@ -15,43 +15,12 @@ import java.security.MessageDigest
 import java.util.function.Consumer
 import java.util.regex.Pattern
 
-import static com.steammachine.org.gralde.plugins.version.change.ChangeNotifier.Action.*
+import static com.steammachine.org.gralde.plugins.version.change.Action.*
 
 /**
  * Task for data
  */
 class ChangeNotifier extends DefaultTask {
-
-    /**
-     * possible task actions
-     */
-    enum Action {
-        CHECK('check'),
-        NEXTVERISON('nextversion'),
-        FORCENEXTVERSION('forcenextverison'),
-        TAKE('take'),
-        HASH('hash')
-
-        static final Map<String, Action> NAMES = names()
-
-        static Map<String, Action> names() {
-            def value = [:]
-            for (Action a : Action.enumConstants) {
-                value.put(a.ident, a)
-            }
-            Collections.unmodifiableMap(value)
-        }
-
-        final String ident
-
-        Action(String ident) {
-            this.ident = Objects.requireNonNull(ident)
-        }
-
-        static Action byName(String name) {
-            NAMES[name]
-        }
-    }
 
     private static final Comparator<File> COMPARATOR = new Comparator<File>() {
         @Override
@@ -152,11 +121,11 @@ class ChangeNotifier extends DefaultTask {
 
         def command = System.getProperty('action')
         log "command is $command"
-        def versionCommand = ChangeNotifier.Action.byName command
+        def versionCommand = byName command
 
         switch (versionCommand) {
             case null:
-                checkChanges()
+                help(command)
                 break
 
             case CHECK:
@@ -180,20 +149,30 @@ class ChangeNotifier extends DefaultTask {
                 break
 
             default:
-                def action = System.getProperty(ACTION)
-                log("unknown option $action")
+                help(command)
                 break
+        }
+    }
+
+    private help(String command) {
+        log("No action found for command $command (project - $project.name)")
+        log("Possible options are : ")
+        for (String message : ActionHelp.HELP_MAP.values()) {
+            log('')
+            log(message)
         }
     }
 
     private hash() {
         String hash = calculateHash()
+        hashStorage.value = hash
+        hashStorage.write()
         log("hash is $hash for project $project.name ")
     }
 
     private take() {
         versionStorage.read()
-        log("version value is $versionStorage.value for project $project.name")
+        log("version value is " + versionStorage.value + " for project $project.name")
     }
 
     private forceNext() {
@@ -213,19 +192,20 @@ class ChangeNotifier extends DefaultTask {
     private incrementVersion() {
         versionStorage.read()
         hashStorage.read()
-        if (hashStorage.value != calculateHash()) {
-            if (versionStorage.value == null) {
-                log("cannot increment null version value for project $project.name")
-            } else if (!VERSION_PATTERN.matcher(versionStorage.value).matches()) {
-                log("cannot increment value $versionStorage.value for project $project.name")
-            } else {
-                log("incrementing the version $versionStorage.value for project $project.name")
-                def ver = Integer.parseInt(versionStorage.value.split("\\.")[2]) + 1
-                versionStorage.value = versionStorage.value.substring(0, versionStorage.value.lastIndexOf(".")) + ".$ver"
-                hashStorage.value = calculateHash()
-                versionStorage.write()
-                hashStorage.write()
-            }
+        if (hashStorage.value == calculateHash()) {
+            log("current version is $versionStorage.value for project $project.name")
+        } else if (versionStorage.value == null) {
+            log("cannot increment null version value for project $project.name")
+        } else if (!VERSION_PATTERN.matcher(versionStorage.value).matches()) {
+            log("cannot increment value $versionStorage.value for project $project.name")
+        } else {
+            log("incrementing the version $versionStorage.value for project $project.name")
+            def ver = Integer.parseInt(versionStorage.value.split("\\.")[2]) + 1
+            versionStorage.value = versionStorage.value.substring(0, versionStorage.value.lastIndexOf(".")) + ".$ver"
+            hashStorage.value = calculateHash()
+            versionStorage.write()
+            hashStorage.write()
+            log("current version is $versionStorage.value for project $project.name")
         }
     }
 
