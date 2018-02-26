@@ -47,6 +47,7 @@ sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
 
+
 auxprops.set('deploy') {
     propertyFile file('publish.properties')
 }
@@ -129,7 +130,6 @@ publishing {
             artifact sourceJar
         }
     }
-
 }
 
 task tagCommandLine {
