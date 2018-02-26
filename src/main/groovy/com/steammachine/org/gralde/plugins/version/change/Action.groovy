@@ -6,7 +6,7 @@ package com.steammachine.org.gralde.plugins.version.change
 enum Action {
     CHECK('check'),
     NEXTVERISON('nextversion'),
-    FORCENEXTVERSION('forcenextverison'),
+    FORCENEXTVERSION('forcenextversion'),
     TAKE('take'),
     HASH('hash')
 

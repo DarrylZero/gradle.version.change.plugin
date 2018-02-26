@@ -31,16 +31,16 @@ public class VersionChangerPluginCheck {
         project.evaluate();
 
         assertTrue(project.getTasks().getByName("version_manager") instanceof ChangeNotifier);
-        assertTrue(project.getPlugins().getAt("com.steammachine.org.gralde.plugins.version.change") instanceof VersionChangerPlugin);
+        assertTrue(project.getPlugins().getAt("com.steammachine.org.gradle.plugins.version.change") instanceof VersionChangerPlugin);
     }
 
     @Test
     void changeNotifierApplication20() {
         DefaultProject project = (DefaultProject) ProjectBuilder.builder().build();
-        project.getPluginManager().apply("com.steammachine.org.gralde.plugins.version.change");
+        project.getPluginManager().apply("com.steammachine.org.gradle.plugins.version.change");
         project.evaluate();
         assertTrue(project.getTasks().getByName("version_manager") instanceof ChangeNotifier);
-        assertTrue(project.getPlugins().getAt("com.steammachine.org.gralde.plugins.version.change") instanceof VersionChangerPlugin);
+        assertTrue(project.getPlugins().getAt("com.steammachine.org.gradle.plugins.version.change") instanceof VersionChangerPlugin);
     }
 
 

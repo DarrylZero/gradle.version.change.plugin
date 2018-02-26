@@ -11,7 +11,7 @@ class ActionCheck {
     enum ActionTemplate {
         CHECK("check"),
         NEXTVERISON("nextversion"),
-        FORCENEXTVERSION("forcenextverison"),
+        FORCENEXTVERSION("forcenextversion"),
         TAKE("take"),
         HASH("hash");
 

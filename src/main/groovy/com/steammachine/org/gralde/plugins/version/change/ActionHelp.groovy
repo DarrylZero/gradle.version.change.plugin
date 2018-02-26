@@ -18,7 +18,7 @@ $Action.NEXTVERISON.ident - increments version if project data is changed
                       """
                     )
                     put(Action.FORCENEXTVERSION, """
-$Action.NEXTVERISON.ident - increments version regarrdless the changes
+$Action.FORCENEXTVERSION.ident - increments version regardless the changes
                       """
                     )
                     put(Action.TAKE, """
