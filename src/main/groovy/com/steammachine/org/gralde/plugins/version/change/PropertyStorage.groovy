@@ -1,5 +1,7 @@
 package com.steammachine.org.gralde.plugins.version.change
 
+import com.steammachine.commonutils.orderedproperties.OrderedProperties
+
 /**
  * implemantation of ValueStorage for property storage
  *
@@ -38,7 +40,7 @@ class PropertyStorage implements ValueStorage {
         }
 
         new FileInputStream(file).withCloseable {
-            def properties = new Properties()
+            def properties = new OrderedProperties()
             properties.load(it)
             value = properties.getProperty(propertyName)
         }
@@ -53,7 +55,7 @@ class PropertyStorage implements ValueStorage {
             throw new IllegalStateException("propertyName is not defined")
         }
 
-        def properties = new Properties()
+        def properties = new OrderedProperties()
         new FileInputStream(file).withCloseable {
             properties.load(it)
         }
@@ -61,7 +63,7 @@ class PropertyStorage implements ValueStorage {
         properties.setProperty(propertyName, value)
 
         new FileOutputStream(file).withCloseable {
-            properties.store(it, "")
+            properties.store(it)
         }
     }
 

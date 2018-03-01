@@ -29,9 +29,7 @@ dependencies {
     implementation gradleApi()
 
     compile 'org.slf4j:slf4j-api:1.7.25'
-    compile 'com.steammachine.org:common.utils:1.0.5'
-    compile 'com.googlecode.json-simple:json-simple:1.1'
-    compile 'com.steammachine.org:common.utils:1.0.5'
+    compile 'com.steammachine.org:common.utils:1.0.7'
 
     testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.0.0'
     testRuntime 'org.junit.jupiter:junit-jupiter-api:5.0.0'
@@ -68,6 +66,7 @@ jar {
 
 task sourceJar(type: Jar) {
     from sourceSets.main.allJava
+    from sourceSets.main.allGroovy
     classifier "sources"
     manifest {
         attributes(
