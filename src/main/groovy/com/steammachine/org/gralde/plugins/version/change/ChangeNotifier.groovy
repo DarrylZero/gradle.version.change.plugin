@@ -4,7 +4,6 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
 import org.gradle.api.internal.file.UnionFileCollection
-import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.TaskAction
 import org.gradle.util.ConfigureUtil
 
@@ -18,7 +17,9 @@ import java.util.regex.Pattern
 import static com.steammachine.org.gralde.plugins.version.change.Action.*
 
 /**
- * Task for data
+ *
+ * {@link com.steammachine.org.gralde.plugins.version.change.ChangeNotifier}
+ * com.steammachine.org.gralde.plugins.version.change.ChangeNotifier
  */
 class ChangeNotifier extends DefaultTask {
 
@@ -30,6 +31,7 @@ class ChangeNotifier extends DefaultTask {
     }
     private static final Path ZERO_PATH = Paths.get("")
     private static final Pattern VERSION_PATTERN = Pattern.compile('^(\\d+)\\.(\\d+)\\.(\\d+)$')
+    private static final String MD5 = "MD5"
     public static final String ACTION = 'action'
 
     private final List<Consumer<String>> loggers = []
@@ -46,6 +48,7 @@ class ChangeNotifier extends DefaultTask {
                 println data
             }
         })
+        log('safdasdasgdfasdadsfadsf')
     }
 
     FileCollection getFiles() {
@@ -57,39 +60,48 @@ class ChangeNotifier extends DefaultTask {
     }
 
     void setFiles(String... filenames) {
-        getLogger().log(LogLevel.DEBUG, "void setFiles(String ... filenames) ")
+        log("void setFiles($filenames) ")
         filenames.each {
             fn -> ensureFiles().add(project.files(fn))
         }
     }
 
     void setFiles(FileCollection collection) {
-        log("void setFiles(FileCollection searchclasspath) ")
+        log("void setFiles($collection) ")
         ensureFiles().add(collection)
     }
 
     void setFiles(File... files) {
-        log("void setFiles(File searchclasspath) ")
+        log("void setFiles($files) ")
         files.each {
             file -> ensureFiles().add(project.files(file))
         }
     }
 
-    void setFiles(FileTree searchclasspath) {
-        log("void setFiles(FileTree searchclasspath) ")
-        ensureFiles().add(searchclasspath)
+    void setFiles(FileTree tree) {
+        log("void setFiles($tree) ")
+        ensureFiles().add(tree)
+    }
+
+    void clearFiles() {
+        files = null
     }
 
     void setRootDirectory(File rootDirectory) {
+        log("void setRootDirectory($rootDirectory.absolutePath)")
         Objects.requireNonNull(rootDirectory)
         this.rootDirectory = rootDirectory
     }
 
     void setRootDirectory(String rootDirectory) {
-        Objects.requireNonNull(rootDirectory)
-        this.rootDirectory = project.file(rootDirectory)
+        setRootDirectory(project.file(rootDirectory))
     }
 
+    /**
+     * create and configure hash-store
+     * @param clazz - not null
+     * @param config - not null
+     */
     void hashStorage(Class<? extends ValueStorage> clazz, Closure config) {
         Objects.requireNonNull(clazz)
         Objects.requireNonNull(config)
@@ -97,8 +109,36 @@ class ChangeNotifier extends DefaultTask {
         ConfigureUtil.configure(config, hashStorage)
     }
 
+    /**
+     * configure hash-store
+     * @param clazz - not null
+     * @param config - not null
+     */
+    void hashStorage(Closure config) {
+        Objects.requireNonNull(config)
+        ConfigureUtil.configure(config, hashStorage)
+    }
+
+
+    /**
+     * create and configure version - storage
+     * @param clazz - not null
+     * @param config- not null
+     */
     void versionStorage(Class<? extends ValueStorage> clazz, Closure config) {
+        Objects.requireNonNull(clazz)
+        Objects.requireNonNull(config)
         versionStorage = clazz.newInstance() as ValueStorage
+        ConfigureUtil.configure(config, versionStorage)
+    }
+
+    /**
+     * configure version - storage
+     * @param clazz - not null
+     * @param config- not null
+     */
+    void versionStorage(Closure config) {
+        Objects.requireNonNull(config)
         ConfigureUtil.configure(config, versionStorage)
     }
 
@@ -110,22 +150,24 @@ class ChangeNotifier extends DefaultTask {
         loggers.remove logConsumer
     }
 
-
-    private log(String data) {
-        loggers.each { it.accept(data) }
+    void config(Closure<ChangeNotifier> config) {
+        ConfigureUtil.configure(config, this)
     }
 
     @TaskAction
     protected process() {
         checkStart()
-
-        def command = System.getProperty('action')
+        def command = System.getProperty(ACTION)
         log "command is $command"
-        def versionCommand = byName command
 
+        def versionCommand = byName command
         switch (versionCommand) {
             case null:
-                help(command)
+                unknownCommand(command)
+                break
+
+            case HELP:
+                help()
                 break
 
             case CHECK:
@@ -133,11 +175,11 @@ class ChangeNotifier extends DefaultTask {
                 break
 
             case NEXTVERISON:
-                incrementVersion()
+                nextVersion()
                 break
 
             case FORCENEXTVERSION:
-                forceNext()
+                forceNextVersion()
                 break
 
             case TAKE:
@@ -149,13 +191,21 @@ class ChangeNotifier extends DefaultTask {
                 break
 
             default:
-                help(command)
+                unknownCommand(command)
                 break
         }
     }
 
-    private help(String command) {
+    private log(String data) {
+        loggers.each { it.accept(data) }
+    }
+
+    private unknownCommand(String command) {
         log("No action found for command $command (project - $project.name)")
+        help()
+    }
+
+    private void help() {
         log("Possible options are : ")
         for (String message : ActionHelp.HELP_MAP.values()) {
             log('')
@@ -175,7 +225,7 @@ class ChangeNotifier extends DefaultTask {
         log("version value is " + versionStorage.value + " for project $project.name")
     }
 
-    private forceNext() {
+    private forceNextVersion() {
         versionStorage.read()
         if (versionStorage.value == null) {
             log("cannot increment null version value for project $project.name")
@@ -186,10 +236,11 @@ class ChangeNotifier extends DefaultTask {
             def ver = Integer.parseInt(versionStorage.value.split("\\.")[2]) + 1
             versionStorage.value = versionStorage.value.substring(0, versionStorage.value.lastIndexOf(".")) + ".$ver"
             versionStorage.write()
+            log("current version is $versionStorage.value for project $project.name")
         }
     }
 
-    private incrementVersion() {
+    private nextVersion() {
         versionStorage.read()
         hashStorage.read()
         if (hashStorage.value == calculateHash()) {
@@ -234,29 +285,20 @@ class ChangeNotifier extends DefaultTask {
         calcCommonHash(ensureFiles().files)
     }
 
-    private String calcCommonHash(Set<File> files) {
-        List<File> list = new ArrayList(files)
-        Collections.sort(list, COMPARATOR)
-
-        def digest = MessageDigest.getInstance("MD5")
-        list.stream().forEachOrdered {
-            calcFileHash(it, digest)
-        }
-
-        Base64.encoder.encodeToString(digest.digest())
-    }
-
-
     void calcFileHash(File file, MessageDigest digest) {
         Objects.requireNonNull(file)
-        def difference = difference(file.toPath(), rootDirectory.toPath())
+        if (!file.exists()) {
+            log("file $file.absolutePath does not exists")
+            return
+        }
 
+        def difference = difference(file.toPath(), rootDirectory.toPath())
         for (int i = 0; i < difference.nameCount; i++) {
             digest.update(difference[i].toString().getBytes(StandardCharsets.UTF_8))
         }
 
-        def buffer = new byte[1024]
         new BufferedInputStream(new FileInputStream(file)).withCloseable {
+            def buffer = new byte[1024]
             def read
             while ((read = it.read(buffer)) >= 0) {
                 digest.update(buffer, 0, read)
@@ -264,14 +306,29 @@ class ChangeNotifier extends DefaultTask {
         }
     }
 
+    boolean changed() {
+        hashStorage.read()
+        return  hashStorage.value != calculateHash()
+    }
+
+    private String calcCommonHash(Set<File> files) {
+        List<File> list = new ArrayList(files)
+        Collections.sort(list, COMPARATOR)
+
+        def digest = MessageDigest.getInstance(MD5)
+        list.stream().forEachOrdered {
+            calcFileHash(it, digest)
+        }
+
+        Base64.encoder.encodeToString(digest.digest())
+    }
 
     private checkChanges() {
-        hashStorage.read()
-        boolean changed = hashStorage.value != calculateHash()
+        boolean changed = changed()
         log("sourcecode for project $project.name is " + (changed ? "changed" : "not changed"))
     }
 
-    private checkStart() {
+    void checkStart() {
         if (!hashStorage) {
             throw new IllegalStateException("hashStorage is not set")
         }

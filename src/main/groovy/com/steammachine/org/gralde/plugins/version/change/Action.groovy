@@ -4,6 +4,7 @@ package com.steammachine.org.gralde.plugins.version.change
  * possible task actions
  */
 enum Action {
+    HELP('help'),
     CHECK('check'),
     NEXTVERISON('nextversion'),
     FORCENEXTVERSION('forcenextversion'),

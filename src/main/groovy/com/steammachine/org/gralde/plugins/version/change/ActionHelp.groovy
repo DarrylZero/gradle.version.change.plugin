@@ -8,6 +8,11 @@ class ActionHelp {
     static final Map<Action, String> HELP_MAP =
             Collections.unmodifiableMap(new HashMap<Action, String>() {
                 {
+                    put(Action.HELP,
+                            """
+$Action.HELP.ident - shows help message
+                      """
+                    )
                     put(Action.CHECK,
                             """
 $Action.CHECK.ident - checks if project data is changed
@@ -31,9 +36,4 @@ $Action.HASH.ident - calculates and writes the hash of project data
                     )
                 }
             })
-
-    public static void main(String[] args) {
-        args = null
-    }
-
 }

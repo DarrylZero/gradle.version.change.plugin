@@ -9,6 +9,7 @@ class ActionCheck {
 
 
     enum ActionTemplate {
+        HELP("help"),
         CHECK("check"),
         NEXTVERISON("nextversion"),
         FORCENEXTVERSION("forcenextversion"),
