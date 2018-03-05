@@ -53,6 +53,57 @@ version_manager.config {
 }
 ```
 
+If you want to use your own storage do the following
+
+```groovy
+import com.steammachine.org.gralde.plugins.version.change.ValueStorage
+
+class CustomStorage implements ValueStorage {
+
+    /**
+     * reads actual value from storage
+     */
+    @Override
+    void read() {
+      /* your custom code */
+    }
+
+    /**
+     * writes current value into storage
+     */
+    void write() {
+       /* your custom code */
+    }
+
+    /**
+     * gets read value
+     * @return a read value
+     */
+    String getValue() {
+       /* your custom code */
+    }
+
+    /**
+     * sets a value into storage
+     *
+     * @param value a value
+     */
+    void setValue(String value) {
+       /* your custom code */
+    }
+}
+
+version_manager.config {
+  hashStorage(CustomStorage) {
+     /* here you set properties of your custom class */
+  }
+
+  versionStorage(CustomStorage) {
+     /* here you set properties of your custom class */
+  }
+}
+```
+
 
 
 

@@ -9,23 +9,23 @@ package com.steammachine.org.gralde.plugins.version.change
 interface ValueStorage {
 
     /**
-     * read actual value from storage
+     * reads actual value from storage
      */
     void read()
 
     /**
-     * write current value into storage
+     * writes current value into storage
      */
     void write()
 
     /**
-     * get read value
+     * gets read value
      * @return a read value
      */
     String getValue()
 
     /**
-     * set a value into storage
+     * sets a value into storage
      *
      * @param value a value
      */
