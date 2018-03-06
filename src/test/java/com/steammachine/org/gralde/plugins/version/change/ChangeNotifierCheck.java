@@ -88,7 +88,7 @@ class ChangeNotifierCheck {
         notifier.setRootDirectory(getAbsoluteResourcePath(getClass(), "res"));
         notifier.setFiles(getAbsoluteResourcePath(getClass(), "res/resource_file1.txt"),
                 getAbsoluteResourcePath(getClass(), "res/subpath/resource_file2.txt"));
-        assertEquals("1B2M2Y8AsgTpgAmY7PhCfg==", notifier.calculateHash());
+        assertEquals("IDqhT8cn8donae361rcB8A==", notifier.calculateHash());
     }
 
 
@@ -121,10 +121,14 @@ class ChangeNotifierCheck {
         assertEquals("1.0.1-SNAPSHOT", ChangeNotifier.incrementVersion("1.0.0-SNAPSHOT"));
     }
 
-
     @Test
     void incrementVersion60() {
         assertEquals("1.0.1-RC", ChangeNotifier.incrementVersion("1.0.0-RC"));
+    }
+
+    @Test
+    void incrementVersion70() {
+        assertEquals("2.0.1-LATEST", ChangeNotifier.incrementVersion("2.0.0-LATEST"));
     }
 
 
