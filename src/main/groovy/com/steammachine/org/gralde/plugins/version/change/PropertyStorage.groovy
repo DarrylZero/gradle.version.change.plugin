@@ -1,9 +1,10 @@
 package com.steammachine.org.gralde.plugins.version.change
 
+import com.steammachine.common.utils.commonutils.CommonUtils
 import com.steammachine.commonutils.orderedproperties.OrderedProperties
 
 /**
- * implemantation of ValueStorage for property storage
+ * implemantation of ValueStorage for property storage.
  *
  * {@link com.steammachine.org.gralde.plugins.version.change.PropertyStorage}
  * com.steammachine.org.gralde.plugins.version.change.PropertyStorage

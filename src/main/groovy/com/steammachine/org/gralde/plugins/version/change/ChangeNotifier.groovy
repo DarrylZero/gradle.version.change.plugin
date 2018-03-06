@@ -15,6 +15,7 @@ import java.util.function.Consumer
 import java.util.regex.Pattern
 
 import static com.steammachine.org.gralde.plugins.version.change.Action.*
+import static java.util.Objects.requireNonNull
 
 /**
  *
@@ -30,7 +31,7 @@ class ChangeNotifier extends DefaultTask {
         }
     }
     private static final Path ZERO_PATH = Paths.get("")
-    private static final Pattern VERSION_PATTERN = Pattern.compile('^(\\d+)\\.(\\d+)\\.(\\d+)$')
+    private static final Pattern VERSION_PATTERN = Pattern.compile('(\\d+)[.](\\d+)[.](\\d+)')
     private static final String MD5 = "MD5"
     public static final String ACTION = 'action'
 
@@ -48,7 +49,6 @@ class ChangeNotifier extends DefaultTask {
                 println data
             }
         })
-        log('safdasdasgdfasdadsfadsf')
     }
 
     FileCollection getFiles() {
@@ -61,6 +61,7 @@ class ChangeNotifier extends DefaultTask {
 
     void setFiles(String... filenames) {
         log("void setFiles($filenames) ")
+        requireNonNull(filenames);
         filenames.each {
             fn -> ensureFiles().add(project.files(fn))
         }
@@ -68,28 +69,38 @@ class ChangeNotifier extends DefaultTask {
 
     void setFiles(FileCollection collection) {
         log("void setFiles($collection) ")
+        requireNonNull(files);
         ensureFiles().add(collection)
     }
 
     void setFiles(File... files) {
         log("void setFiles($files) ")
+        requireNonNull(files);
         files.each {
             file -> ensureFiles().add(project.files(file))
         }
     }
 
+    /**
+     * adds a filetree to object file set
+     * @param tree a tree ()
+     */
     void setFiles(FileTree tree) {
         log("void setFiles($tree) ")
+        requireNonNull(tree);
         ensureFiles().add(tree)
     }
 
+    /**
+     * Clears all files
+     */
     void clearFiles() {
         files = null
     }
 
     void setRootDirectory(File rootDirectory) {
         log("void setRootDirectory($rootDirectory.absolutePath)")
-        Objects.requireNonNull(rootDirectory)
+        requireNonNull(rootDirectory)
         this.rootDirectory = rootDirectory
     }
 
@@ -103,8 +114,8 @@ class ChangeNotifier extends DefaultTask {
      * @param config - not null
      */
     void hashStorage(Class<? extends ValueStorage> clazz, Closure config) {
-        Objects.requireNonNull(clazz)
-        Objects.requireNonNull(config)
+        requireNonNull(clazz)
+        requireNonNull(config)
         hashStorage = clazz.newInstance() as ValueStorage
         ConfigureUtil.configure(config, hashStorage)
     }
@@ -115,30 +126,28 @@ class ChangeNotifier extends DefaultTask {
      * @param config - not null
      */
     void hashStorage(Closure config) {
-        Objects.requireNonNull(config)
+        requireNonNull(config)
         ConfigureUtil.configure(config, hashStorage)
     }
-
 
     /**
      * create and configure version - storage
      * @param clazz - not null
-     * @param config- not null
+     * @param config - not null
      */
     void versionStorage(Class<? extends ValueStorage> clazz, Closure config) {
-        Objects.requireNonNull(clazz)
-        Objects.requireNonNull(config)
+        requireNonNull(clazz)
+        requireNonNull(config)
         versionStorage = clazz.newInstance() as ValueStorage
         ConfigureUtil.configure(config, versionStorage)
     }
 
     /**
      * configure version - storage
-     * @param clazz - not null
-     * @param config- not null
+     * @param config - not null
      */
     void versionStorage(Closure config) {
-        Objects.requireNonNull(config)
+        requireNonNull(config)
         ConfigureUtil.configure(config, versionStorage)
     }
 
@@ -152,6 +161,27 @@ class ChangeNotifier extends DefaultTask {
 
     void config(Closure<ChangeNotifier> config) {
         ConfigureUtil.configure(config, this)
+    }
+
+    static String incrementVersion(String value) {
+        requireNonNull(value)
+
+        if (!VERSION_PATTERN.matcher(value)) {
+            throw new IllegalStateException("cannot increment version of value $value")
+        }
+        def matcher = VERSION_PATTERN.matcher(value)
+        if (matcher.find() && matcher.find()) {
+            throw new IllegalStateException("cannot increment version of value $value")
+        }
+
+        matcher = VERSION_PATTERN.matcher(value)
+        while (matcher.find()) {
+            def oldVersion = matcher.group(0)
+            def newVersionPart = oldVersion.substring(0, oldVersion.lastIndexOf(".")) + "." +
+                    (Integer.parseInt(oldVersion.split("\\.")[2]) + 1)
+            return value.replace(oldVersion, newVersionPart)
+        }
+        throw new IllegalStateException("cannot increment version of value $value")
     }
 
     @TaskAction
@@ -233,9 +263,10 @@ class ChangeNotifier extends DefaultTask {
             log("cannot increment value $versionStorage.value for project $project.name")
         } else {
             log("incrementing value $versionStorage.value for project $project.name")
-            def ver = Integer.parseInt(versionStorage.value.split("\\.")[2]) + 1
-            versionStorage.value = versionStorage.value.substring(0, versionStorage.value.lastIndexOf(".")) + ".$ver"
+            versionStorage.value = incrementVersion(versionStorage.value)
             versionStorage.write()
+            hashStorage.value = calculateHash()
+            hashStorage.write()
             log("current version is $versionStorage.value for project $project.name")
         }
     }
@@ -251,8 +282,7 @@ class ChangeNotifier extends DefaultTask {
             log("cannot increment value $versionStorage.value for project $project.name")
         } else {
             log("incrementing the version $versionStorage.value for project $project.name")
-            def ver = Integer.parseInt(versionStorage.value.split("\\.")[2]) + 1
-            versionStorage.value = versionStorage.value.substring(0, versionStorage.value.lastIndexOf(".")) + ".$ver"
+            versionStorage.value = incrementVersion(versionStorage.value)
             hashStorage.value = calculateHash()
             versionStorage.write()
             hashStorage.write()
@@ -286,7 +316,7 @@ class ChangeNotifier extends DefaultTask {
     }
 
     void calcFileHash(File file, MessageDigest digest) {
-        Objects.requireNonNull(file)
+        requireNonNull(file)
         if (!file.exists()) {
             log("file $file.absolutePath does not exists")
             return
@@ -308,7 +338,7 @@ class ChangeNotifier extends DefaultTask {
 
     boolean changed() {
         hashStorage.read()
-        return  hashStorage.value != calculateHash()
+        return hashStorage.value != calculateHash()
     }
 
     private String calcCommonHash(Set<File> files) {

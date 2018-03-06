@@ -3,8 +3,6 @@ package com.steammachine.org.gralde.plugins.version.change;
 import com.steammachine.org.junit5.extensions.expectedexceptions.Expected;
 import org.gradle.api.Project;
 import org.gradle.testfixtures.ProjectBuilder;
-import org.gradle.util.ConfigureUtil;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -93,6 +91,45 @@ class ChangeNotifierCheck {
         assertEquals("IDqhT8cn8donae361rcB8A==", notifier.calculateHash());
     }
 
+
+    /* ---------------------------------------------- incrementVersion  ---------------------------------------------*/
+
+    @Test
+    @Expected(expected = NullPointerException.class)
+    void incrementVersion10() {
+        ChangeNotifier.incrementVersion(null);
+    }
+
+    @Test
+    @Expected(expected = IllegalStateException.class)
+    void incrementVersion20() {
+        ChangeNotifier.incrementVersion("Lazha");
+    }
+
+    @Test
+    void incrementVersion30() {
+        assertEquals("1.0.1", ChangeNotifier.incrementVersion("1.0.0"));
+    }
+
+    @Test
+    void incrementVersion40() {
+        assertEquals("1.0.15", ChangeNotifier.incrementVersion("1.0.14"));
+    }
+
+    @Test
+    void incrementVersion50() {
+        assertEquals("1.0.1-SNAPSHOT", ChangeNotifier.incrementVersion("1.0.0-SNAPSHOT"));
+    }
+
+    @Test
+    void incrementVersion60() {
+        assertEquals("1.0.1-RC", ChangeNotifier.incrementVersion("1.0.0-RC"));
+    }
+
+    @Test
+    void incrementVersion70() {
+        assertEquals("2.0.1-LATEST", ChangeNotifier.incrementVersion("2.0.0-LATEST"));
+    }
 
 
 }
